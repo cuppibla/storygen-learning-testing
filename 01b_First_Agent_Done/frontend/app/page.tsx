@@ -69,20 +69,14 @@ export default function Home() {
     setConnectionError(null);
 
     try {
-      // Dynamic URL detection for Cloud Shell compatibility
+      // Use same origin for WebSocket connection (no CORS issues!)
       let wsBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       if (!wsBaseUrl) {
-        // Auto-detect environment
+        // Auto-detect from current location
         if (typeof window !== 'undefined') {
-          const hostname = window.location.hostname;
-          if (hostname.includes('cloudshell.dev')) {
-            // Cloud Shell environment - use the same hostname but port 8000
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            wsBaseUrl = `${protocol}//${hostname.replace(/3000/, '8000')}`;
-          } else {
-            // Local development fallback
-            wsBaseUrl = 'ws://localhost:8000';
-          }
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          const host = window.location.host;
+          wsBaseUrl = `${protocol}//${host}`;
         } else {
           wsBaseUrl = 'ws://localhost:8000';
         }

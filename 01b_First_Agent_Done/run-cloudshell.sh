@@ -31,38 +31,45 @@ print_error() {
 
 # Function to cleanup background processes
 cleanup() {
-    print_status "Stopping services..."
+    print_status "Stopping backend service..."
     if [[ ! -z "$BACKEND_PID" ]]; then
         kill $BACKEND_PID 2>/dev/null || true
     fi
-    if [[ ! -z "$FRONTEND_PID" ]]; then
-        kill $FRONTEND_PID 2>/dev/null || true
-    fi
-    print_success "Services stopped"
+    print_success "Service stopped"
     exit 0
 }
 
 # Set up signal handling
 trap cleanup SIGINT SIGTERM
 
-# Check if .env file exists with API key
-if [[ ! -f backend/.env ]]; then
-    print_error "backend/.env file not found!"
+# Check if .env file exists in parent directory and copy it to backend
+if [[ ! -f .env ]]; then
+    print_error ".env file not found in parent directory!"
     print_error "Please run setup-cloudshell.sh first"
     exit 1
 fi
 
+# Copy .env from parent directory to backend directory
+print_status "Using .env file from parent directory"
+cp .env backend/.env
+
 # Check if API key is set
 if grep -q "your_actual_google_api_key_here" backend/.env; then
-    print_error "Please update your Google API key in backend/.env"
+    print_error "Please update your Google API key in .env file"
     print_error "Get your API key from: https://aistudio.google.com/"
     exit 1
 fi
 
 print_status "Starting StoryGen in Google Cloud Shell..."
 
-# Start backend
-print_status "Starting backend on port 8000..."
+# Check if frontend is built
+if [[ ! -d "frontend/out" ]]; then
+    print_error "Frontend not built! Please run setup-cloudshell.sh first"
+    exit 1
+fi
+
+# Start backend (which serves the frontend)
+print_status "Starting backend on port 8000 (serving frontend + API)..."
 cd backend
 export SSL_CERT_FILE=$(python -m certifi)
 python main.py &
@@ -72,28 +79,21 @@ cd ..
 # Wait a moment for backend to start
 sleep 3
 
-# Start frontend
-print_status "Starting frontend on port 3000..."
-cd frontend
-npm run start &
-FRONTEND_PID=$!
-cd ..
-
-# Wait a moment for frontend to start
-sleep 5
-
 print_success "StoryGen is now running!"
 echo ""
 print_status "Access your application:"
 if [[ ! -z "$WEB_HOST" ]]; then
-    echo -e "${GREEN}   Frontend: https://3000-${WEB_HOST}.cloudshell.dev${NC}"
-    echo -e "${GREEN}   Backend:  https://8000-${WEB_HOST}.cloudshell.dev${NC}"
+    echo -e "${GREEN}   Application: https://8000-${WEB_HOST}.cloudshell.dev${NC}"
 else
-    echo -e "${GREEN}   Frontend: Click the Web Preview button and select port 3000${NC}"
-    echo -e "${GREEN}   Backend:  Click the Web Preview button and select port 8000${NC}"
+    echo -e "${GREEN}   Application: Click the Web Preview button and select port 8000${NC}"
 fi
 echo ""
-print_warning "Press Ctrl+C to stop all services"
+print_status "Features available:"
+echo -e "${GREEN}   • Frontend UI served at /${NC}"
+echo -e "${GREEN}   • WebSocket API at /ws/{user_id}${NC}"
+echo -e "${GREEN}   • Health check at /health${NC}"
+echo ""
+print_warning "Press Ctrl+C to stop the service"
 
 # Keep script running and wait for signal
 wait

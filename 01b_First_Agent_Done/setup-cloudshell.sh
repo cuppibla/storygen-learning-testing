@@ -50,9 +50,13 @@ print_status "Setting SSL certificate..."
 export SSL_CERT_FILE=$(python -m certifi)
 echo "export SSL_CERT_FILE=$(python -m certifi)" >> ~/.bashrc
 
-# Check for environment file
-if [[ ! -f .env ]]; then
-    print_warning "No .env file found. Creating template..."
+# Check for environment file in parent directory
+if [[ -f ../.env ]]; then
+    print_success "Found .env file in parent directory"
+    print_status "Copying .env file to backend directory..."
+    cp ../.env .env
+else
+    print_warning "No .env file found in parent directory. Creating template..."
     cat > .env << EOF
 # Google AI API Configuration
 GOOGLE_GENAI_USE_VERTEXAI=FALSE
@@ -75,8 +79,8 @@ cd frontend
 print_status "Installing Node.js dependencies..."
 npm install
 
-# Build frontend for production (optional)
-print_status "Building frontend..."
+# Build frontend for static export
+print_status "Building frontend for static export..."
 npm run build
 
 cd ..
@@ -84,9 +88,9 @@ cd ..
 print_success "Setup complete!"
 echo ""
 print_status "To start the application:"
-echo -e "${YELLOW}1. Edit backend/.env with your Google API key${NC}"
+echo -e "${YELLOW}1. Make sure your Google API key is in backend/.env${NC}"
 echo -e "${YELLOW}2. Run: ./run-cloudshell.sh${NC}"
 echo ""
 print_status "The application will be available at:"
-echo -e "${GREEN}   Frontend: https://3000-\$WEB_HOST.cloudshell.dev${NC}"
-echo -e "${GREEN}   Backend:  https://8000-\$WEB_HOST.cloudshell.dev${NC}"
+echo -e "${GREEN}   Single URL: https://8000-\$WEB_HOST.cloudshell.dev${NC}"
+echo -e "${GREEN}   (Frontend + Backend served from same origin)${NC}"

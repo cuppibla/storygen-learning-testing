@@ -32,10 +32,10 @@ APP_NAME = "storygen_app"
 # Initialize FastAPI app
 app = FastAPI(title="StoryGen Backend", description="ADK-powered story generation backend")
 
-# Add CORS middleware to allow frontend connections
+# CORS (Cross-Origin Resource Sharing)
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https?://.*(localhost|cloudshell\.dev)(:\d+)?|https?://.*\.run\.app",  # Allow localhost and Cloud Shell URLs
+    allow_origin_regex=r"https?://.*(localhost|cloudshell\.dev|run\.app)(:\d+)?",  # Allow localhost, Cloud Shell, and Cloud Run domains
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
@@ -281,10 +281,23 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "service": "storygen-backend"}
 
-@app.get("/")
-async def root():
-    """Root endpoint"""
+@app.get("/api")
+async def api_root():
+    """API root endpoint"""
     return {"message": "StoryGen Backend API", "version": "2.0.0", "workflow": "sequential"}
+
+# Serve frontend static files
+STATIC_FILES_DIR = os.environ.get("STATIC_FILES_DIR", "../frontend/out")
+try:
+    app.mount("/", StaticFiles(directory=STATIC_FILES_DIR, html=True), name="static")
+    logger.info(f"✅ Serving frontend from {STATIC_FILES_DIR}")
+except RuntimeError:
+    logger.warning("⚠️ Frontend build not found. Run `npm run build` and `npm run export` in the frontend directory.")
+    
+    @app.get("/")
+    async def fallback_root():
+        """Fallback root endpoint when frontend not available"""
+        return {"message": "StoryGen Backend API", "version": "2.0.0", "note": "Frontend not built - run 'npm run build && npm run export' in frontend directory"}
 
 if __name__ == "__main__":
     import uvicorn
