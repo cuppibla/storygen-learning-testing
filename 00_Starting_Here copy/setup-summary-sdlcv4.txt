@@ -1,0 +1,43 @@
+# StoryGen CI/CD Setup Summary for Project: sdlcv4
+# Generated on Wed Aug 20 00:43:14 PDT 2025
+
+## Resources Created
+- Workload Identity Pool: github-pool
+- Workload Identity Provider: github-provider-fixed
+- Service Account: github-actions@sdlcv4.iam.gserviceaccount.com  
+- Storage Bucket: storygen-workshop-bucket
+- Secret Manager: storygen-workshop-api-secret
+
+## GitHub Repository Secrets
+Add at: https://github.com/cuppibla/storygen-learning-testing/settings/secrets/actions
+
+WORKLOAD_IDENTITY_PROVIDER:
+projects/920692961413/locations/global/workloadIdentityPools/github-pool/providers/github-provider-fixed
+
+GCP_SERVICE_ACCOUNT_EMAIL:
+github-actions@sdlcv4.iam.gserviceaccount.com
+
+GOOGLE_API_KEY:
+(Get from https://aistudio.google.com/)
+
+## GitHub Repository Variables  
+Add at: https://github.com/cuppibla/storygen-learning-testing/settings/variables/actions
+
+GCP_PROJECT_ID: sdlcv4
+GCP_REGION: us-central1
+ARTIFACT_REPO: storygen-repo
+BACKEND_SERVICE_NAME: genai-backend
+FRONTEND_SERVICE_NAME: genai-frontend
+BUCKET_NAME: storygen-workshop-bucket
+SECRET_NAME: storygen-workshop-api-secret
+
+## Next Steps
+1. Add above secrets and variables to GitHub
+2. Get Gemini API key: https://aistudio.google.com/
+3. Add API key to Secret Manager:
+   echo 'YOUR_API_KEY' | gcloud secrets versions add storygen-workshop-api-secret --data-file=- --project=sdlcv4
+4. Add same API key as GOOGLE_API_KEY in GitHub
+5. Push to main branch - CI/CD will deploy automatically
+
+## Validation
+Run: ./validate-workload-identity.sh
