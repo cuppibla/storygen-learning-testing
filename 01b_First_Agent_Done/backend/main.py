@@ -35,9 +35,9 @@ app = FastAPI(title="StoryGen Backend", description="ADK-powered story generatio
 # Add CORS middleware to allow frontend connections
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # Next.js default ports
+    allow_origin_regex=r"https?://.*(localhost|cloudshell\.dev)(:\d+)?|https?://.*\.run\.app",  # Allow localhost and Cloud Shell URLs
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 

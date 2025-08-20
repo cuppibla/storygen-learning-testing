@@ -69,8 +69,24 @@ export default function Home() {
     setConnectionError(null);
 
     try {
-      // Use environment variable for the backend URL, with a fallback for local dev
-      const wsBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'ws://localhost:8000';
+      // Dynamic URL detection for Cloud Shell compatibility
+      let wsBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      if (!wsBaseUrl) {
+        // Auto-detect environment
+        if (typeof window !== 'undefined') {
+          const hostname = window.location.hostname;
+          if (hostname.includes('cloudshell.dev')) {
+            // Cloud Shell environment - use the same hostname but port 8000
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            wsBaseUrl = `${protocol}//${hostname.replace(/3000/, '8000')}`;
+          } else {
+            // Local development fallback
+            wsBaseUrl = 'ws://localhost:8000';
+          }
+        } else {
+          wsBaseUrl = 'ws://localhost:8000';
+        }
+      }
       const wsUrl = `${wsBaseUrl}/ws/${userIdRef.current}`;
       console.log(`Connecting to WebSocket at: ${wsUrl}`);
       const ws = new WebSocket(wsUrl);
